@@ -106,7 +106,7 @@ export default function ScanPage() {
                                 <motion.div
                                     initial={{ scale: 0.9, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
-                                    className="p-6 bg-gradient-to-br from-slate-900 to-slate-800 border border-purple-500/30 rounded-2xl shadow-2xl relative overflow-hidden"
+                                    className="p-6 bg-linear-to-br from-slate-900 to-slate-800 border border-purple-500/30 rounded-2xl shadow-2xl relative overflow-hidden"
                                 >
                                     {/* Background Glow */}
                                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/20 blur-3xl rounded-full pointer-events-none" />
