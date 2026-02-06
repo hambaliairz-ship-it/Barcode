@@ -25,7 +25,7 @@ export async function getDashboardStats() {
                 barcode: scans.barcode,
                 scannedAt: scans.scannedAt,
                 productName: products.name,
-                category: products.aisle // Assuming aisle/category field exists or we add it later
+                category: products.description // Fallback to description or null since 'aisle' doesn't exist yet
             })
             .from(scans)
             .leftJoin(products, eq(scans.barcode, products.barcode))
