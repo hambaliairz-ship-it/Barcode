@@ -7,7 +7,7 @@ const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
 const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash-001", // Menggunakan versi spesifik untuk menghindari error 404
+    model: "gemini-pro", // Fallback ke model paling standar/stabil (v1.0)
 });
 
 export async function analyzeProduct(barcode: string) {
