@@ -53,13 +53,14 @@ export async function analyzeProduct(barcode: string) {
         let errorMessage = "Gagal menganalisis produk dengan AI. ";
 
         if (error.message?.includes("API key not valid")) {
-            errorMessage += "API Key tidak valid. Cek konfigurasi Vercel.";
+            errorMessage += "API Key tidak valid (Invalid Key).";
         } else if (error.message?.includes("quota")) {
-            errorMessage += "Kuota API habis. Coba lagi nanti.";
+            errorMessage += "Kuota API habis (Quota Exceeded).";
         } else {
-            errorMessage += "Pastikan API Key sudah diset di Vercel/Environment Variables.";
+            // Return the RAW error message to ID the problem
+            errorMessage += `Error Asli: ${error.message}`;
         }
 
-        return { error: errorMessage + " (Code: " + barcode + ")" };
+        return { error: errorMessage };
     }
 }
