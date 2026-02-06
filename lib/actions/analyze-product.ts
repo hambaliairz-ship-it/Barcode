@@ -11,8 +11,11 @@ const model = genAI.getGenerativeModel({
 });
 
 export async function analyzeProduct(barcode: string) {
-    if (!apiKey) {
-        return { error: "Gemini API Key belum dikonfigurasi di .env" };
+    const key = process.env.GEMINI_API_KEY;
+    console.log("Debug: API Key length:", key ? key.length : "undefined");
+
+    if (!key) {
+        return { error: "Server Error: GEMINI_API_KEY is undefined. Did you Redeploy after adding env vars?" };
     }
 
     try {
