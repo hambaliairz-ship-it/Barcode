@@ -44,8 +44,19 @@ export async function analyzeProduct(barcode: string) {
         const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
         return { data: JSON.parse(cleanedText) };
-    } catch (error) {
-        console.error("Gemini Error:", error);
-        return { error: "Gagal menganalisis produk dengan AI. Coba lagi nanti." };
+    } catch (error: any) {
+        console.error("Gemini Error Details:", error);
+
+        let errorMessage = "Gagal menganalisis produk dengan AI. ";
+
+        if (error.message?.includes("API key not valid")) {
+            errorMessage += "API Key tidak valid. Cek konfigurasi Vercel.";
+        } else if (error.message?.includes("quota")) {
+            errorMessage += "Kuota API habis. Coba lagi nanti.";
+        } else {
+            errorMessage += "Pastikan API Key sudah diset di Vercel/Environment Variables.";
+        }
+
+        return { error: errorMessage + " (Code: " + barcode + ")" };
     }
 }
