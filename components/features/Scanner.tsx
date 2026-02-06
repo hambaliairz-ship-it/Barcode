@@ -17,8 +17,19 @@ export function Scanner({ onScan }: ScannerProps) {
     const scannerRef = useRef<Html5Qrcode | null>(null);
 
     useEffect(() => {
-        // Initialize scanner instance
-        const scanner = new Html5Qrcode("reader");
+        // Initialize scanner instance with formats config
+        const scanner = new Html5Qrcode("reader", {
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+            ],
+            verbose: false
+        });
         scannerRef.current = scanner;
 
         // Get cameras
@@ -54,15 +65,6 @@ export function Scanner({ onScan }: ScannerProps) {
                     fps: 10,
                     qrbox: { width: 250, height: 250 },
                     aspectRatio: 1.0,
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.QR_CODE,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.UPC_A,
-                        Html5QrcodeSupportedFormats.UPC_E,
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                    ],
                 },
                 (decodedText) => {
                     onScan(decodedText);
