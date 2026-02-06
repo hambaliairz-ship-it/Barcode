@@ -22,6 +22,9 @@ export function Scanner({ onScan }: ScannerProps) {
                 fps: 10,
                 qrbox: { width: 250, height: 250 },
                 aspectRatio: 1.0,
+                videoConstraints: {
+                    facingMode: "environment"
+                },
                 formatsToSupport: [
                     Html5QrcodeSupportedFormats.QR_CODE,
                     Html5QrcodeSupportedFormats.EAN_13,
