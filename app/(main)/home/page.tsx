@@ -56,8 +56,8 @@ export default async function HomePage() {
 
             <section>
                 <div className="flex justify-between items-center mb-4 px-1">
-                    <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-800 dark:text-white">
-                        <Clock className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                    <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-slate-400">
+                        <Clock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                         Recent Activity
                     </h2>
                     <Link href="/history" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors bg-blue-50 dark:bg-blue-400/10 px-3 py-1.5 rounded-full border border-blue-100 dark:border-transparent">
