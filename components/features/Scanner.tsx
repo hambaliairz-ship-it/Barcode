@@ -51,18 +51,35 @@ export function Scanner({ onScan }: ScannerProps) {
 
         try {
             setIsScanning(true);
+            const config = {
+                fps: 20,
+                qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+                    const minEdgePercentage = 0.85; // 85% area scan
+                    const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                    const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                    return {
+                        width: qrboxSize,
+                        height: qrboxSize,
+                    };
+                },
+                aspectRatio: 1.0,
+                videoConstraints: {
+                    facingMode: "environment",
+                    width: { min: 640, ideal: 1920, max: 3840 }, // Minta resolusi tinggi
+                    height: { min: 480, ideal: 1080, max: 2160 },
+                    focusMode: "continuous"
+                } as MediaTrackConstraints,
+                useBarCodeDetectorIfSupported: true, // Native API
+            };
+
             await scannerRef.current.start(
                 selectedCamera || { facingMode: "environment" },
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0,
-                },
+                config as any, // Cast to any to support experimental features
                 (decodedText) => {
                     onScan(decodedText);
                     stopScanning();
                 },
-                () => { } // Ignore errors
+                () => { }
             );
         } catch (err) {
             console.error("Failed to start scanning", err);
