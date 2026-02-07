@@ -4,17 +4,16 @@ import { eq } from "drizzle-orm";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
+// Updated List of Reliable Free Models (Feb 2026 Compatible)
 const MODELS = [
-    "tng/deepseek-r1t2-chimera:free",
-    "meta/llama-3.3-70b-instruct:free",
-    "upstage/solar-pro-3:free",
+    "google/gemini-2.0-pro-exp-02-05:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
+    "deepseek/deepseek-r1:free",
+    "qwen/qwen-2.5-vl-72b-instruct:free",
+    "mistralai/mistral-small-24b-instruct-2501:free",
+    "microsoft/phi-3-medium-128k-instruct:free",
 ];
-
-export type AnalysisResult = {
-    data: any;
-    model: string;
-    cached: boolean;
-};
 
 export async function* getAnalysisStream(barcodeData: string): AsyncGenerator<{ status: string; model?: string; data?: any }> {
     // 1. Check Cache
@@ -26,70 +25,81 @@ export async function* getAnalysisStream(barcodeData: string): AsyncGenerator<{ 
             .limit(1);
 
         if (cached.length > 0) {
-            yield { status: "cached", model: cached[0].modelUsed || "unknown", data: JSON.parse(cached[0].analysisResult || "{}") };
+            let parsedData;
+            try {
+                parsedData = JSON.parse(cached[0].analysisResult || "{}");
+            } catch (e) {
+                parsedData = {};
+            }
+            yield { status: "cached", model: cached[0].modelUsed || "cache", data: parsedData };
             return;
         }
     } catch (error) {
         console.error("Cache check failed:", error);
-        // Proceed to fetch if cache check fails
     }
 
     // 2. Call OpenRouter with Fallback
+    let success = false;
+
     for (const model of MODELS) {
         yield { status: "analyzing", model };
 
         try {
-            if (!OPENROUTER_API_KEY) throw new Error("API Key missing");
+            if (!OPENROUTER_API_KEY) throw new Error("API Key belum diset di .env");
+
+            console.log(`[AI] Requesting ${model}...`);
 
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://rzvalor.com", // Optional
-                    "X-Title": "RzValor AI Scanner", // Optional
+                    "HTTP-Referer": "https://rzvalor.app",
+                    "X-Title": "RzValor Scanner",
                 },
                 body: JSON.stringify({
                     model,
                     messages: [
                         {
                             role: "system",
-                            content: "Analyze this barcode data/product and provide a JSON response with fields: name, category, description, nutrition (if food), estimated_price. output ONLY VALID JSON.",
+                            content: "Analyze this barcode/product. Response MUST be valid JSON only. Fields: name, category, description, nutrition (object), estimated_price (string). Output only JSON. No markdown.",
                         },
                         {
                             role: "user",
-                            content: barcodeData,
+                            content: `Product Barcode: ${barcodeData}`,
                         },
                     ],
                 }),
             });
 
             if (!response.ok) {
-                console.warn(`Model ${model} failed with status ${response.status}`);
+                console.warn(`[AI] ${model} failed: ${response.status}`);
                 yield { status: "busy", model };
-                continue; // Try next model
+                // Wait 1.5s before retry
+                await new Promise(r => setTimeout(r, 1500));
+                continue;
             }
 
             const data = await response.json();
 
             if (data.choices && data.choices.length > 0) {
-                const content = data.choices[0].message.content;
+                let content = data.choices[0].message.content || "{}";
 
-                // Basic JSON extraction (sometimes models add markdown blocks)
-                let jsonStr = content;
-                if (content.includes("```json")) {
-                    jsonStr = content.split("```json")[1].split("```")[0];
-                } else if (content.includes("```")) {
-                    jsonStr = content.split("```")[1].split("```")[0];
-                }
+                // Cleanup JSON & Remove <think> blocks
+                content = content.replace(/<think>[\s\S]*?<\/think>/g, "");
+                content = content.replace(/```json/g, "").replace(/```/g, "").trim();
 
                 let parsedResult;
                 try {
-                    parsedResult = JSON.parse(jsonStr);
+                    parsedResult = JSON.parse(content);
                 } catch (e) {
-                    // Fallback to storing raw if parsing fails, or try next model?
-                    // For now, assume success if we got content, but try to parse.
-                    parsedResult = { raw: content, error: "Failed to parse JSON" };
+                    console.error(`[AI] JSON Parse Failed for ${model}:`, content.substring(0, 50));
+                    continue;
+                }
+
+                if (!parsedResult.name) {
+                    console.warn(`[AI] Model ${model} returned invalid data structure`);
+                    continue;
                 }
 
                 // 3. Save to Cache
@@ -100,9 +110,10 @@ export async function* getAnalysisStream(barcodeData: string): AsyncGenerator<{ 
                         modelUsed: model,
                     });
                 } catch (dbError) {
-                    console.error("Failed to save to cache:", dbError);
+                    console.error("Cache save failed:", dbError);
                 }
 
+                success = true;
                 yield { status: "complete", model, data: parsedResult };
                 return;
             }
@@ -113,15 +124,7 @@ export async function* getAnalysisStream(barcodeData: string): AsyncGenerator<{ 
         }
     }
 
-    yield { status: "failed", data: null };
-}
-
-// Helper for non-streaming usage if needed
-export async function getAnalysis(barcodeData: string) {
-    const generator = getAnalysisStream(barcodeData);
-    let lastValue;
-    for await (const value of generator) {
-        lastValue = value;
+    if (!success) {
+        yield { status: "failed", data: { error: "Semua server AI gratis sedang sibuk. Mohon coba lagi dalam 1 menit." } };
     }
-    return lastValue;
 }

@@ -85,7 +85,7 @@ export default function ScanPage() {
                                 barcode: decodedText
                             });
                         } else if (update.status === "error" || update.status === "failed") {
-                            setError("Analisis gagal.");
+                            setError(update.data?.error || "Analisis gagal. Server sibuk.");
                             setStatus("error");
                         }
                     } catch (e) {
