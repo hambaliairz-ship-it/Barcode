@@ -28,3 +28,11 @@ export const scans = pgTable("scans", {
     scannedAt: timestamp("scanned_at").defaultNow().notNull(),
     location: text("location"), // Optional: Store scan location
 });
+
+export const productCache = pgTable("product_cache", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    barcodeData: text("barcode_data").notNull(), // String (Index) - Data hasil scan (URL/GTIN)
+    analysisResult: text("analysis_result"), // Text - Hasil JSON dari AI
+    modelUsed: text("model_used"), // String - Nama model yang memberikan hasil
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});

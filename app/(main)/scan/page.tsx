@@ -8,12 +8,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Sparkles, AlertCircle } from "lucide-react";
 
 import { saveScan } from "@/lib/actions/save-scan";
+import { ScannerOverlay } from "@/components/ScannerOverlay";
 
 export default function ScanPage() {
     const [data, setData] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<"idle" | "analyzing" | "complete" | "error">("idle");
+    const [modelName, setModelName] = useState<string | undefined>(undefined);
     const [aiResult, setAiResult] = useState<any>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | undefined>(undefined);
     const [isUrl, setIsUrl] = useState(false);
 
     // Regex sederhana untuk deteksi URL
@@ -21,7 +23,7 @@ export default function ScanPage() {
 
     const handleScan = async (decodedText: string) => {
         // Prevent multiple scans while loading
-        if (loading || data === decodedText) return;
+        if (status === "analyzing" || data === decodedText) return;
 
         setData(decodedText);
 
@@ -36,45 +38,76 @@ export default function ScanPage() {
     };
 
     const processAnalysis = async (decodedText: string) => {
-        setLoading(true);
-        setError(null);
+        setStatus("analyzing");
+        setError(undefined);
         setAiResult(null);
+        setModelName(undefined);
 
         try {
-            const result = await analyzeProduct(decodedText);
+            const response = await fetch("/api/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ barcode: decodedText }),
+            });
 
-            if (result.error) {
-                setError(result.error);
-                setLoading(false);
-            } else if (result.data) {
-                setAiResult(result.data);
+            if (!response.ok) throw new Error("Network response was not ok");
+            if (!response.body) throw new Error("No response body");
 
-                const saveData = {
-                    ...result.data,
-                    barcode: decodedText
-                };
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let jsonBuffer = "";
 
-                saveScan(saveData).then((res) => {
-                    if (res.success) {
-                        console.log("Scan saved successfully");
-                    } else {
-                        console.error("Failed to save scan:", res.error);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                jsonBuffer += chunk;
+
+                const lines = jsonBuffer.split("\n");
+                jsonBuffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        const update = JSON.parse(line);
+
+                        if (update.status === "analyzing" || update.status === "busy") {
+                            setModelName(update.model);
+                        } else if (update.status === "complete" || update.status === "cached") {
+                            setAiResult(update.data);
+                            setModelName(update.model);
+                            setStatus("complete");
+
+                            // Save to history
+                            await saveScan({
+                                ...update.data,
+                                barcode: decodedText
+                            });
+                        } else if (update.status === "error" || update.status === "failed") {
+                            setError("Analisis gagal.");
+                            setStatus("error");
+                        }
+                    } catch (e) {
+                        console.error("Error parsing stream line", e);
                     }
-                });
-
-                setLoading(false);
+                }
             }
+
         } catch (err) {
+            console.error(err);
             setError("Terjadi kesalahan sistem.");
-            setLoading(false);
+            setStatus("error");
         }
     };
 
     const handleReset = () => {
         setData(null);
         setAiResult(null);
-        setError(null);
+        setError(undefined);
         setIsUrl(false);
+        setStatus("idle");
+        setModelName(undefined);
     };
 
     return (
@@ -100,12 +133,7 @@ export default function ScanPage() {
                             <Scanner onScan={handleScan} />
                         </motion.div>
                     ) : (
-                        <motion.div
-                            key="result"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="w-full max-w-md space-y-4"
-                        >
+                        <div className="w-full max-w-md space-y-4">
                             {/* Barcode Info */}
                             <div className="p-4 bg-slate-800/50 border border-slate-700 rounded-xl flex items-center justify-between gap-4">
                                 <div className="min-w-0">
@@ -121,7 +149,7 @@ export default function ScanPage() {
                             </div>
 
                             {/* URL Prompt */}
-                            {isUrl && !loading && !aiResult && (
+                            {isUrl && status === "idle" && (
                                 <div className="p-6 bg-slate-900/80 border border-blue-500/30 rounded-2xl text-center space-y-4">
                                     <p className="text-slate-300 text-sm">Ini sepertinya sebuah Link/URL website.</p>
                                     <div className="flex flex-col gap-3">
@@ -143,68 +171,15 @@ export default function ScanPage() {
                                 </div>
                             )}
 
-                            {/* Loading State with Skeleton */}
-                            {loading && (
-                                <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-2xl text-center space-y-4 animate-pulse">
-                                    <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto" />
-                                    <p className="text-blue-400 font-medium">Gemini AI sedang menganalisis...</p>
-                                </div>
-                            )}
-
-                            {/* Error State */}
-                            {error && (
-                                <div className="p-4 bg-red-950/30 border border-red-900/50 rounded-xl text-red-200 flex items-center gap-3">
-                                    <AlertCircle className="w-5 h-5 shrink-0" />
-                                    <p className="text-sm">{error}</p>
-                                </div>
-                            )}
-
-                            {/* AI Result */}
-                            {aiResult && (
-                                <motion.div
-                                    initial={{ scale: 0.9, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    className="p-6 bg-linear-to-br from-slate-900 to-slate-800 border border-purple-500/30 rounded-2xl shadow-2xl relative overflow-hidden"
-                                >
-                                    {/* Background Glow */}
-                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/20 blur-3xl rounded-full pointer-events-none" />
-
-                                    <div className="relative z-10 space-y-4">
-                                        <div>
-                                            <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-[10px] uppercase font-bold rounded-md tracking-wider">
-                                                {aiResult.category || "General"}
-                                            </span>
-                                            <h2 className="text-2xl font-bold text-white mt-1 leading-tight">
-                                                {aiResult.name}
-                                            </h2>
-                                        </div>
-
-                                        <p className="text-slate-300 text-sm leading-relaxed">
-                                            {aiResult.description}
-                                        </p>
-
-                                        {aiResult.nutrition && Object.keys(aiResult.nutrition).length > 0 && (
-                                            <div className="grid grid-cols-2 gap-2 mt-4">
-                                                {Object.entries(aiResult.nutrition).map(([key, value]) => (
-                                                    <div key={key} className="bg-slate-950/50 p-2 rounded-lg">
-                                                        <p className="text-[10px] text-slate-500 uppercase">{key}</p>
-                                                        <p className="text-sm font-semibold">{String(value)}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {aiResult.fun_fact && (
-                                            <div className="mt-4 pt-4 border-t border-white/10">
-                                                <p className="text-xs text-yellow-400 italic">
-                                                    💡 Fun Fact: {aiResult.fun_fact}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </motion.div>
+                            {/* Enhanced Overlay Component */}
+                            <ScannerOverlay
+                                status={status}
+                                modelName={modelName}
+                                result={aiResult}
+                                error={error}
+                                onReset={handleReset}
+                            />
+                        </div>
                     )}
                 </AnimatePresence>
             </div>
