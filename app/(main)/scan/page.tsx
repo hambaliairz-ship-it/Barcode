@@ -14,14 +14,28 @@ export default function ScanPage() {
     const [loading, setLoading] = useState(false);
     const [aiResult, setAiResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isUrl, setIsUrl] = useState(false);
 
-
+    // Regex sederhana untuk deteksi URL
+    const urlPattern = /^(http|https):\/\/[^ "]+$/;
 
     const handleScan = async (decodedText: string) => {
         // Prevent multiple scans while loading
         if (loading || data === decodedText) return;
 
         setData(decodedText);
+
+        // Cek apakah ini URL?
+        if (urlPattern.test(decodedText)) {
+            setIsUrl(true);
+            return; // Berhenti di sini, jangan analisis AI dulu
+        }
+
+        setIsUrl(false);
+        processAnalysis(decodedText);
+    };
+
+    const processAnalysis = async (decodedText: string) => {
         setLoading(true);
         setError(null);
         setAiResult(null);
@@ -31,17 +45,15 @@ export default function ScanPage() {
 
             if (result.error) {
                 setError(result.error);
-                setLoading(false); // Stop loading if error
+                setLoading(false);
             } else if (result.data) {
                 setAiResult(result.data);
 
-                // Simpan ke database
                 const saveData = {
                     ...result.data,
                     barcode: decodedText
                 };
 
-                // Jangan tunggu proses simpan selesai agar UI tetap responsif
                 saveScan(saveData).then((res) => {
                     if (res.success) {
                         console.log("Scan saved successfully");
@@ -62,6 +74,7 @@ export default function ScanPage() {
         setData(null);
         setAiResult(null);
         setError(null);
+        setIsUrl(false);
     };
 
     return (
@@ -106,6 +119,29 @@ export default function ScanPage() {
                                     Scan Ulang
                                 </button>
                             </div>
+
+                            {/* URL Prompt */}
+                            {isUrl && !loading && !aiResult && (
+                                <div className="p-6 bg-slate-900/80 border border-blue-500/30 rounded-2xl text-center space-y-4">
+                                    <p className="text-slate-300 text-sm">Ini sepertinya sebuah Link/URL website.</p>
+                                    <div className="flex flex-col gap-3">
+                                        <a
+                                            href={data!}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="w-full py-3 bg-blue-500 hover:bg-blue-600 rounded-xl font-semibold text-white transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            🌐 Buka Link
+                                        </a>
+                                        <button
+                                            onClick={() => processAnalysis(data!)}
+                                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-medium text-slate-300 transition-colors"
+                                        >
+                                            🤖 Tetap Analisis dengan AI
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Loading State with Skeleton */}
                             {loading && (

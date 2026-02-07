@@ -20,23 +20,31 @@ export function BottomNav() {
 
     return (
         <div className="fixed bottom-6 left-0 right-0 z-50 px-4 flex justify-center">
-            <nav className="flex items-center justify-between bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 shadow-lg w-full max-w-sm">
+            <nav className="flex items-center justify-between bg-black/40 backdrop-blur-xl border border-white/10 rounded-full px-6 py-3 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] w-full max-w-sm mx-4">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
                     const Icon = item.icon;
 
-                    if (item.isMain) {
+                    if (item.name === "Scan") {
                         return (
-                            <div key={item.name} className="relative -top-6">
+                            <div key={item.name} className="relative -top-8">
                                 <Link href={item.href}>
                                     <motion.div
                                         whileTap={{ scale: 0.9 }}
                                         animate={{
-                                            boxShadow: isActive
-                                                ? "0 0 20px rgba(59, 130, 246, 0.5)"
-                                                : "0 0 0px rgba(0,0,0,0)",
+                                            boxShadow: [
+                                                "0 0 0px rgba(59, 130, 246, 0.4)",
+                                                "0 0 20px rgba(59, 130, 246, 0.6)",
+                                                "0 0 0px rgba(59, 130, 246, 0.4)",
+                                            ],
+                                            scale: [1, 1.05, 1],
                                         }}
-                                        className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl"
+                                        transition={{
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            ease: "easeInOut",
+                                        }}
+                                        className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-purple-600 text-white shadow-xl border-4 border-slate-900"
                                     >
                                         <Icon className="h-8 w-8" />
                                     </motion.div>
@@ -46,19 +54,19 @@ export function BottomNav() {
                     }
 
                     return (
-                        <Link key={item.name} href={item.href} className="relative p-2">
+                        <Link key={item.name} href={item.href} className="relative p-2 group">
                             {isActive && (
                                 <motion.div
                                     layoutId="activeTab"
-                                    className="absolute inset-0 rounded-full bg-white/20"
+                                    className="absolute inset-0 rounded-full bg-white/10"
                                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                 />
                             )}
                             <div className="relative flex flex-col items-center gap-1">
                                 <Icon
                                     className={cn(
-                                        "h-6 w-6 transition-colors",
-                                        isActive ? "text-blue-400" : "text-gray-400"
+                                        "h-6 w-6 transition-colors duration-300",
+                                        isActive ? "text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" : "text-slate-400 group-hover:text-slate-200"
                                     )}
                                 />
                             </div>

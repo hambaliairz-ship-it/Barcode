@@ -5,7 +5,30 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 
 
+import { db } from "@/lib/db";
+import { products } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+
 export async function analyzeProduct(barcode: string) {
+    // 1. SMART CACHING: Cek Database Dulu!
+    try {
+        const existingProduct = await db.select().from(products).where(eq(products.barcode, barcode)).limit(1);
+
+        if (existingProduct.length > 0 && existingProduct[0].aiAnalysis) {
+            console.log("CACHE HIT: Mengambil data dari database lokal.", barcode);
+            try {
+                // Parsing data JSON yang tersimpan di kolom aiAnalysis
+                const cachedData = JSON.parse(existingProduct[0].aiAnalysis);
+                return { data: cachedData };
+            } catch (e) {
+                console.warn("Gagal parse cache, lanjut ke AI...");
+            }
+        }
+    } catch (dbError) {
+        console.error("Database Cache Check Failed:", dbError);
+        // Jangan stop proses jika DB error, lanjut ke AI
+    }
+
     const key = process.env.GEMINI_API_KEY;
 
     if (!key) {
