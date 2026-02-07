@@ -20,7 +20,19 @@ export function Scanner({ onScan }: ScannerProps) {
     useEffect(() => {
         // Initialize scanner instance with formats config
         const scanner = new Html5Qrcode("reader", {
-            verbose: false
+            verbose: false,
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.DATA_MATRIX,
+                Html5QrcodeSupportedFormats.AZTEC,
+                Html5QrcodeSupportedFormats.PDF_417,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39
+            ]
         });
         scannerRef.current = scanner;
 
@@ -62,7 +74,8 @@ export function Scanner({ onScan }: ScannerProps) {
                         height: qrboxSize,
                     };
                 },
-                aspectRatio: 1.0,
+                // aspectRatio: 1.0,  <-- Removed to allow full screen usage
+                disableFlip: false,
                 videoConstraints: {
                     facingMode: "environment",
                     width: { min: 640, ideal: 1920, max: 3840 }, // Minta resolusi tinggi
