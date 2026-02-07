@@ -7,11 +7,15 @@ import { analyzeProduct } from "@/lib/actions/analyze-product";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Sparkles, AlertCircle } from "lucide-react";
 
+import { saveScan } from "@/lib/actions/save-scan";
+
 export default function ScanPage() {
     const [data, setData] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [aiResult, setAiResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+
+
 
     const handleScan = async (decodedText: string) => {
         // Prevent multiple scans while loading
@@ -24,14 +28,32 @@ export default function ScanPage() {
 
         try {
             const result = await analyzeProduct(decodedText);
+
             if (result.error) {
                 setError(result.error);
-            } else {
+                setLoading(false); // Stop loading if error
+            } else if (result.data) {
                 setAiResult(result.data);
+
+                // Simpan ke database
+                const saveData = {
+                    ...result.data,
+                    barcode: decodedText
+                };
+
+                // Jangan tunggu proses simpan selesai agar UI tetap responsif
+                saveScan(saveData).then((res) => {
+                    if (res.success) {
+                        console.log("Scan saved successfully");
+                    } else {
+                        console.error("Failed to save scan:", res.error);
+                    }
+                });
+
+                setLoading(false);
             }
         } catch (err) {
             setError("Terjadi kesalahan sistem.");
-        } finally {
             setLoading(false);
         }
     };
