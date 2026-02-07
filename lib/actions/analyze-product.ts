@@ -101,16 +101,30 @@ export async function analyzeProduct(barcode: string) {
     } catch (error: any) {
         console.error("Gemini Error Details:", error);
 
-        let errorMessage = "Gagal menganalisis produk dengan AI. ";
+        // FALLBACK: Jika AI Gagal (Kuota Habis/Error), tapi ada data dari OpenFoodFacts, GUNAKAN DATA ITU!
+        if (offData) {
+            console.log("AI Failed/Quota Exceeded. Using OpenFoodFacts data as fallback.");
+            return {
+                data: {
+                    name: offData.name,
+                    description: `Produk ini terdaftar sebagai ${offData.categories} dari merk ${offData.brand}. (Deskripsi AI tidak tersedia karena kuota habis)`,
+                    category: offData.categories,
+                    nutrition: { calories: "-", sugar: "-" },
+                    fun_fact: "Data diambil langsung dari database OpenFoodFacts."
+                }
+            };
+        }
+
+        let errorMessage = "Gagal menganalisis produk. ";
 
         if (error.message?.includes("API key not valid")) {
             errorMessage += "API Key tidak valid.";
-        } else if (error.message?.includes("quota")) {
-            errorMessage += "Kuota API habis.";
+        } else if (error.message?.includes("quota") || error.status === 429) {
+            errorMessage += "Kuota AI habis. Silakan coba lagi nanti.";
         } else if (error.message?.includes("404") || error.message?.includes("not found")) {
-            errorMessage += "Model tidak ditemukan atau ketidakcocokan versi API.";
+            errorMessage += "Model AI sedang gangguan.";
         } else {
-            errorMessage += `Error: ${error.message}`;
+            errorMessage += "Terjadi kesalahan pada sistem.";
         }
 
         return { error: errorMessage };
