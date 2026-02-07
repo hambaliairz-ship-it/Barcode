@@ -125,6 +125,42 @@ export async function* getAnalysisStream(barcodeData: string): AsyncGenerator<{ 
     }
 
     if (!success) {
-        yield { status: "failed", data: { error: "Semua server AI gratis sedang sibuk. Mohon coba lagi dalam 1 menit." } };
+        // Fallback: Direct Gemini API (Using GEMINI_API_KEY from .env)
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        if (GEMINI_API_KEY) {
+            try {
+                yield { status: "analyzing", model: "google-gemini-2.0-flash-direct" };
+                const { GoogleGenerativeAI } = await import("@google/generative-ai");
+                const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+                const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // or gemini-1.5-flash
+
+                const result = await model.generateContent(`Analyze this barcode/product: ${barcodeData}. Return VALID JSON with fields: name, category, description, nutrition (object), estimated_price. Output ONLY JSON, no markdown.`);
+                const response = result.response;
+                const text = response.text();
+
+                // Cleanup JSON
+                const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
+                const parsedResult = JSON.parse(cleanJson);
+
+                // Save to Cache
+                try {
+                    await db.insert(productCache).values({
+                        barcodeData,
+                        analysisResult: JSON.stringify(parsedResult),
+                        modelUsed: "gemini-direct",
+                    });
+                } catch (dbError) {
+                    // Ignore cache errors
+                }
+
+                yield { status: "complete", model: "gemini-direct", data: parsedResult };
+                return;
+
+            } catch (geminiError) {
+                console.error("Gemini Direct Error:", geminiError);
+            }
+        }
+
+        yield { status: "failed", data: { error: "Semua server AI sedang sibuk. Mohon coba lagi dalam 1 menit." } };
     }
 }
