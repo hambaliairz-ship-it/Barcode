@@ -94,14 +94,14 @@ export default function ScanPage() {
                             className="w-full max-w-md space-y-4"
                         >
                             {/* Barcode Info */}
-                            <div className="p-4 bg-slate-800/50 border border-slate-700 rounded-xl flex items-center justify-between">
-                                <div>
+                            <div className="p-4 bg-slate-800/50 border border-slate-700 rounded-xl flex items-center justify-between gap-4">
+                                <div className="min-w-0">
                                     <p className="text-xs text-slate-400">Barcode Terdeteksi</p>
-                                    <p className="font-mono text-lg font-bold tracking-wider">{data}</p>
+                                    <p className="font-mono text-lg font-bold tracking-wider truncate">{data}</p>
                                 </div>
                                 <button
                                     onClick={handleReset}
-                                    className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-full transition-colors"
+                                    className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-full transition-colors shrink-0"
                                 >
                                     Scan Ulang
                                 </button>

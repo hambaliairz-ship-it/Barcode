@@ -20,15 +20,6 @@ export function Scanner({ onScan }: ScannerProps) {
     useEffect(() => {
         // Initialize scanner instance with formats config
         const scanner = new Html5Qrcode("reader", {
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-            ],
             verbose: false
         });
         scannerRef.current = scanner;
@@ -99,7 +90,11 @@ export function Scanner({ onScan }: ScannerProps) {
             onScan(result); // Pass decoded text to parent
         } catch (err) {
             console.error("Error scanning file", err);
-            alert("Gagal membaca barcode dari gambar. Pastikan gambar jelas.");
+            if (err?.toString().includes("No MultiFormat Readers")) {
+                alert("Barcode tidak ditemukan. Pastikan gambar jelas dan barcode terlihat utuh.");
+            } else {
+                alert("Gagal membaca gambar. Coba gambar lain.");
+            }
         }
     };
 
