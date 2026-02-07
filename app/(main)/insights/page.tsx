@@ -85,7 +85,7 @@ export default async function InsightsPage() {
             <section className="bg-linear-to-br from-indigo-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
                 <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2 opacity-80 decoration-slice">
+                    <div className="flex items-center gap-2 mb-2 opacity-80 box-decoration-slice">
                         <TrendingUp className="w-4 h-4" />
                         <span className="text-xs font-bold uppercase tracking-wider">AI Suggestion</span>
                     </div>
