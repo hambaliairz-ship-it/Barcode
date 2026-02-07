@@ -4,22 +4,35 @@ import { db } from "@/lib/db";
 import { products, scans } from "@/lib/db/schema";
 import { count, desc, eq, sql } from "drizzle-orm";
 
-export async function getScanHistory() {
+const ITEMS_PER_PAGE = 10;
+
+export async function getScanHistory(page: number = 1, limit: number = ITEMS_PER_PAGE) {
     try {
+        const offset = (page - 1) * limit;
+
         const history = await db
             .select({
                 id: scans.id,
                 barcode: scans.barcode,
                 scannedAt: scans.scannedAt,
                 productName: products.name,
-                category: products.aiAnalysis, // Get full analysis data
+                category: products.aiAnalysis,
             })
             .from(scans)
             .leftJoin(products, eq(scans.barcode, products.barcode))
             .orderBy(desc(scans.scannedAt))
-            .limit(50); // Limit to last 50 scans for now
+            .limit(limit)
+            .offset(offset);
 
-        return history.map(scan => {
+        // Get total count for pagination
+        const [totalResult] = await db
+            .select({ count: count() })
+            .from(scans);
+
+        const totalItems = totalResult.count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        const data = history.map(scan => {
             let category = "Uncategorized";
             try {
                 if (scan.category) {
@@ -37,16 +50,37 @@ export async function getScanHistory() {
                 category
             };
         });
+
+        return {
+            data,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        };
+
     } catch (error) {
         console.error("Failed to fetch history:", error);
-        return [];
+        return {
+            data: [],
+            pagination: {
+                currentPage: 1,
+                totalPages: 1,
+                totalItems: 0,
+                hasNextPage: false,
+                hasPrevPage: false
+            }
+        };
     }
 }
 
 export async function getInsights() {
     try {
         // 1. Most Scanned Category
-        const scanHistory = await getScanHistory();
+        const { data: scanHistory } = await getScanHistory(1, 100); // Get up to 100 recent scans for insights
         const categoryCounts: Record<string, number> = {};
 
         scanHistory.forEach(scan => {
