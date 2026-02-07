@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic'; // Always fetch fresh data
 
 export default async function HomePage() {
     const { totalScans, totalProducts, recentScans } = await getDashboardStats();
-    const aiStatus = await checkAiStatus();
+    // Disabled AI check to save quota (15 RPM limit)
+    const aiStatus = { status: 'online', message: 'Ready' };
 
     return (
         <div className="space-y-6 pb-24">
