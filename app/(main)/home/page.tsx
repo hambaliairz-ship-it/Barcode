@@ -56,7 +56,7 @@ export default async function HomePage() {
 
             <section>
                 <div className="flex justify-between items-center mb-4 px-1">
-                    <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-slate-400">
+                    <h2 className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-semibold">
                         <Clock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                         Recent Activity
                     </h2>
