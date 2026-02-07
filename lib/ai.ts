@@ -6,6 +6,7 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Updated List of Reliable Free Models (Feb 2026 Compatible)
 const MODELS = [
+    "arcee-ai/trinity-large-preview:free",
     "google/gemini-2.0-pro-exp-02-05:free",
     "meta-llama/llama-3.3-70b-instruct:free",
     "google/gemini-2.0-flash-exp:free",
