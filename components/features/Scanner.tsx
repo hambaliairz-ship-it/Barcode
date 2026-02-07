@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { motion } from "framer-motion";
 import { Camera, RefreshCw, X, ImagePlus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ScannerProps {
     onScan: (decodedText: string) => void;
@@ -151,62 +152,76 @@ export function Scanner({ onScan }: ScannerProps) {
             </div>
 
             {/* Button Controls */}
-            {!isScanning && (
-                <div className="mt-8 flex flex-col gap-4 w-full px-4">
-                    {/* Camera Selector (Only show if multiple cameras) */}
-                    {cameras.length > 1 && (
-                        <div className="flex justify-center items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full border border-slate-700 w-fit mx-auto mb-2">
-                            <RefreshCw className="w-4 h-4 text-slate-400" />
-                            <select
-                                value={selectedCamera || ""}
-                                onChange={(e) => setSelectedCamera(e.target.value)}
-                                className="bg-transparent text-sm text-slate-300 outline-none cursor-pointer"
-                            >
-                                {cameras.map((cam) => (
-                                    <option key={cam.id} value={cam.id} className="bg-slate-800">
-                                        {cam.label || `Camera ${cam.id.slice(0, 5)}...`}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    <div className="flex gap-4 justify-center">
-                        {/* Start Camera Button */}
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={startScanning}
-                            className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-2xl border border-slate-700 shadow-lg hover:bg-slate-750 transition-colors flex-1"
+            <div className="mt-8 flex flex-col gap-4 w-full px-4">
+                {/* Camera Selector (Only show if multiple cameras and NOT scanning) */}
+                {!isScanning && cameras.length > 1 && (
+                    <div className="flex justify-center items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full border border-slate-700 w-fit mx-auto mb-2">
+                        <RefreshCw className="w-4 h-4 text-slate-400" />
+                        <select
+                            value={selectedCamera || ""}
+                            onChange={(e) => setSelectedCamera(e.target.value)}
+                            className="bg-transparent text-sm text-slate-300 outline-none cursor-pointer"
                         >
-                            <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                                <Camera className="w-6 h-6 text-white" />
-                            </div>
-                            <span className="text-sm font-medium text-slate-200">Kamera</span>
-                        </motion.button>
-
-                        {/* Gallery Upload Button */}
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => document.getElementById('qr-input-file')?.click()}
-                            className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-2xl border border-slate-700 shadow-lg hover:bg-slate-750 transition-colors flex-1"
-                        >
-                            <div className="w-12 h-12 rounded-full bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                                <ImagePlus className="w-6 h-6 text-white" />
-                            </div>
-                            <span className="text-sm font-medium text-slate-200">Galeri</span>
-                            <input
-                                type="file"
-                                id="qr-input-file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={scanFromFile}
-                            />
-                        </motion.button>
+                            {cameras.map((cam) => (
+                                <option key={cam.id} value={cam.id} className="bg-slate-800">
+                                    {cam.label || `Camera ${cam.id.slice(0, 5)}...`}
+                                </option>
+                            ))}
+                        </select>
                     </div>
+                )}
+
+                <div className="flex gap-4 justify-center">
+                    {/* Start/Stop Camera Button */}
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={isScanning ? stopScanning : startScanning}
+                        className={cn(
+                            "flex flex-col items-center gap-2 p-4 rounded-2xl border shadow-lg transition-colors flex-1",
+                            isScanning
+                                ? "bg-red-500/10 border-red-500/30 hover:bg-red-500/20"
+                                : "bg-slate-800 border-slate-700 hover:bg-slate-750"
+                        )}
+                    >
+                        <div className={cn(
+                            "w-12 h-12 rounded-full flex items-center justify-center shadow-lg",
+                            isScanning
+                                ? "bg-red-500 shadow-red-500/20"
+                                : "bg-linear-to-br from-blue-500 to-purple-600 shadow-blue-500/20"
+                        )}>
+                            {isScanning ? <X className="w-6 h-6 text-white" /> : <Camera className="w-6 h-6 text-white" />}
+                        </div>
+                        <span className="text-sm font-medium text-slate-200">
+                            {isScanning ? "Berhenti" : "Kamera"}
+                        </span>
+                    </motion.button>
+
+                    {/* Gallery Upload Button */}
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={async () => {
+                            if (isScanning) await stopScanning();
+                            document.getElementById('qr-input-file')?.click();
+                        }}
+                        className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-2xl border border-slate-700 shadow-lg hover:bg-slate-750 transition-colors flex-1"
+                    >
+                        <div className="w-12 h-12 rounded-full bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                            <ImagePlus className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-200">Galeri</span>
+                    </motion.button>
+
+                    <input
+                        type="file"
+                        id="qr-input-file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={scanFromFile}
+                    />
                 </div>
-            )}
+            </div>
         </div>
     );
 }

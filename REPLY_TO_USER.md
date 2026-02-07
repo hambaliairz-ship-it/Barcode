@@ -1,14 +1,11 @@
-# Scanner Diperbaiki! 🛠️
+# Fitur Scan Galeri Siap 🖼️
 
-Masalahnya "kamera terbuka tapi diam saja" kemungkinan besar karena setingannya hanya mencari **QR Code**, bukan Barcode produk.
+Ah, benar juga! Tadi tombol upload filenya sempat hilang saat saya "memodernkan" tampilan.
 
-## Apa yang saya ubah:
-Saya sudah update `Scanner.tsx` untuk mengenali format barcode standar produk:
-- **EAN-13 & EAN-8**: Barcode di bungkus Indomie, Snack, Minuman, dll.
-- **UPC**: Standar internasional lainnya.
-- **Code 128**: Sering dipakai di resi pengiriman.
+## Fitur Baru:
+Saya sudah menambahkan tombol khusus **Galeri** (warna hijau tosca) di sebelah tombol **Kamera**.
 
-## Silakan Coba Lagi:
-Arahkan kamera ke barcode produk (garis-garis hitam putih), bukan QR code. Tunggu 1-2 detik dengan pencahayaan yang cukup.
+1.  Klik **Galeri** ➡️ Pilih foto barcode dari HP.
+2.  Sistem akan otomatis membaca barcode dari gambar tersebut tanpa perlu kamera.
 
-Beritahu saya jika sudah berhasil ter-scan! 📸
+Semuanya sudah di-push. Silakan tunggu Redeploy selesai, lalu refresh HP untuk mencobanya!

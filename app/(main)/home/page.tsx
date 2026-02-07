@@ -1,4 +1,4 @@
-
+import { checkAiStatus } from '@/lib/actions/check-ai';
 import Link from 'next/link';
 import { getDashboardStats } from '@/lib/data/dashboard';
 import { Package, ScanBarcode, Clock } from 'lucide-react';
@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'; // Always fetch fresh data
 
 export default async function HomePage() {
     const { totalScans, totalProducts, recentScans } = await getDashboardStats();
+    const aiStatus = await checkAiStatus();
 
     return (
         <div className="space-y-6 pb-24">
@@ -15,7 +16,18 @@ export default async function HomePage() {
                     <h1 className="text-3xl font-bold bg-linear-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">
                         RzValor
                     </h1>
-                    <p className="text-sm text-slate-400">Smart Inventory Tracker</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm text-slate-400">Smart Inventory Tracker</p>
+                        <span className="text-slate-700">•</span>
+                        <div className="flex items-center gap-1.5 bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-700/50">
+                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${aiStatus.status === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
+                                aiStatus.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+                                }`} />
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                                AI: {aiStatus.status}
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
                     RZ
